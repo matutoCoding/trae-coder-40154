@@ -87,6 +87,11 @@ router.post('/', (req, res) => {
     return res.status(400).json({ error: '服装ID、批号、数量、效期不能为空' });
   }
 
+  const qty = parseInt(quantity);
+  if (isNaN(qty) || qty <= 0) {
+    return res.status(400).json({ error: '数量必须大于0' });
+  }
+
   const costume = db.getById('costumes', costume_id);
   if (!costume) {
     return res.status(404).json({ error: '服装不存在' });
@@ -99,16 +104,17 @@ router.post('/', (req, res) => {
 
   const isExpired = dayjs(expiry_date).isBefore(dayjs(), 'day');
   const status = isExpired ? 'expired' : 'normal';
+  const nowStr = dayjs().format('YYYY-MM-DD HH:mm:ss');
 
   const info = db.insert('costume_batches', {
     costume_id: parseInt(costume_id),
     batch_no,
-    quantity: parseInt(quantity),
-    available_quantity: parseInt(quantity),
+    quantity: qty,
+    available_quantity: qty,
     expiry_date,
     purchase_price: purchase_price || 0,
     supplier: supplier || null,
-    inbound_date: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+    inbound_date: nowStr,
     status,
     remark: remark || null
   });

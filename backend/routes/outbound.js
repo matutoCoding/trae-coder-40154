@@ -42,6 +42,20 @@ router.get('/:id', (req, res) => {
   res.json({ ...record, items });
 });
 
+router.get('/by-schedule/:scheduleId', (req, res) => {
+  const scheduleId = req.params.scheduleId;
+  
+  const outbound = db.filter('outbound_records', { schedule_id: scheduleId })
+    .sort((a, b) => b.id - a.id)[0];
+  
+  if (!outbound) {
+    return res.status(404).json({ error: '未找到该排期的出库记录' });
+  }
+
+  const items = db.filter('outbound_items', { outbound_id: outbound.id });
+  res.json({ ...outbound, items });
+});
+
 router.post('/by-schedule/:scheduleId', (req, res) => {
   const { operator, remark } = req.body;
   const scheduleId = req.params.scheduleId;
@@ -76,6 +90,8 @@ router.post('/by-schedule/:scheduleId', (req, res) => {
   let firstBatchId = null;
   let firstBatchNo = null;
 
+  const nowStr = dayjs().format('YYYY-MM-DD HH:mm:ss');
+
   db.transaction(() => {
     const info = db.insert('outbound_records', {
       outbound_no: outboundNo,
@@ -85,7 +101,8 @@ router.post('/by-schedule/:scheduleId', (req, res) => {
       total_quantity: schedule.quantity,
       operator: operator || '系统',
       status: 'outbound',
-      remark: remark || null
+      remark: remark || null,
+      outbound_date: nowStr
     });
 
     const outboundId = info.lastInsertRowid;
@@ -134,12 +151,16 @@ router.post('/direct', (req, res) => {
     return res.status(400).json({ error: '服装ID和数量不能为空' });
   }
 
+  const qty = parseInt(quantity);
+  if (isNaN(qty) || qty <= 0) {
+    return res.status(400).json({ error: '数量必须大于0' });
+  }
+
   const costume = db.getById('costumes', costume_id);
   if (!costume) {
     return res.status(404).json({ error: '服装不存在' });
   }
 
-  const qty = parseInt(quantity);
   const result = getAvailableBatches(costume_id, qty);
   
   if (result.remaining > 0) {
@@ -151,6 +172,7 @@ router.post('/direct', (req, res) => {
   }
 
   const outboundNo = `OUT-${dayjs().format('YYYYMMDD')}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+  const nowStr = dayjs().format('YYYY-MM-DD HH:mm:ss');
 
   db.transaction(() => {
     const info = db.insert('outbound_records', {
@@ -161,7 +183,8 @@ router.post('/direct', (req, res) => {
       total_quantity: qty,
       operator: operator || '系统',
       status: 'outbound',
-      remark: remark || null
+      remark: remark || null,
+      outbound_date: nowStr
     });
 
     const outboundId = info.lastInsertRowid;

@@ -122,6 +122,13 @@ function Outbound() {
       alert('请选择服装并输入数量');
       return;
     }
+    
+    const qty = parseInt(directForm.quantity);
+    if (isNaN(qty) || qty <= 0) {
+      alert('数量必须大于0');
+      return;
+    }
+    
     if (!fifoPreview?.can_outbound) {
       alert('库存不足，无法出库');
       return;

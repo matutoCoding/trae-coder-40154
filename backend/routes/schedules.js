@@ -27,6 +27,16 @@ router.get('/', (req, res) => {
   }
 
   schedules.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+  
+  schedules = schedules.map(s => {
+    const days = dayjs(s.end_date).diff(dayjs(s.start_date), 'day') + 1;
+    return {
+      ...s,
+      rental_days: days > 0 ? days : 1,
+      total_amount: Math.max(0, (s.daily_rate || 0) * (days > 0 ? days : 1) * (s.quantity || 0))
+    };
+  });
+  
   res.json(schedules);
 });
 
@@ -96,10 +106,20 @@ router.post('/', (req, res) => {
     return res.status(400).json({ error: '服装ID、数量、起止日期不能为空' });
   }
 
+  const qty = parseInt(quantity);
+  if (isNaN(qty) || qty <= 0) {
+    return res.status(400).json({ error: '数量必须大于0' });
+  }
+
+  if (dayjs(end_date).isBefore(dayjs(start_date), 'day')) {
+    return res.status(400).json({ error: '归还日期不能早于起租日期' });
+  }
+
   const scheduleNo = `SCH-${dayjs().format('YYYYMMDD')}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
   
   const days = rental_days || dayjs(end_date).diff(dayjs(start_date), 'day') + 1;
-  const totalAmount = (daily_rate || 0) * days * quantity;
+  const validDays = days > 0 ? days : 1;
+  const totalAmount = Math.max(0, (daily_rate || 0) * validDays * qty);
 
   const costume = db.getById('costumes', costume_id);
 
@@ -112,10 +132,10 @@ router.post('/', (req, res) => {
     costume_name: costume_name || costume?.name || '',
     batch_id: null,
     batch_no: null,
-    quantity: parseInt(quantity),
+    quantity: qty,
     start_date,
     end_date,
-    rental_days: parseInt(days),
+    rental_days: validDays,
     daily_rate: daily_rate || 0,
     total_amount: totalAmount,
     damage_deposit: damage_deposit || 0,
@@ -147,10 +167,20 @@ router.put('/:id', (req, res) => {
 
   const newStart = start_date || existing.start_date;
   const newEnd = end_date || existing.end_date;
+  
+  if (dayjs(newEnd).isBefore(dayjs(newStart), 'day')) {
+    return res.status(400).json({ error: '归还日期不能早于起租日期' });
+  }
+
+  let qty = quantity !== undefined ? parseInt(quantity) : existing.quantity;
+  if (isNaN(qty) || qty <= 0) {
+    return res.status(400).json({ error: '数量必须大于0' });
+  }
+
   const days = rental_days || dayjs(newEnd).diff(dayjs(newStart), 'day') + 1;
-  const qty = quantity || existing.quantity;
+  const validDays = days > 0 ? days : 1;
   const rate = daily_rate !== undefined ? daily_rate : existing.daily_rate;
-  const totalAmount = rate * days * qty;
+  const totalAmount = Math.max(0, rate * validDays * qty);
 
   db.update('rental_schedules', req.params.id, {
     troupe_id: troupe_id !== undefined ? troupe_id : existing.troupe_id,
@@ -160,7 +190,7 @@ router.put('/:id', (req, res) => {
     quantity: qty,
     start_date: newStart,
     end_date: newEnd,
-    rental_days: days,
+    rental_days: validDays,
     daily_rate: rate,
     total_amount: totalAmount,
     damage_deposit: damage_deposit !== undefined ? damage_deposit : existing.damage_deposit,
@@ -232,9 +262,19 @@ router.post('/batch-create', (req, res) => {
         contact_person, phone, remark
       } = schedule;
 
+      const qty = parseInt(quantity);
+      if (isNaN(qty) || qty <= 0) {
+        throw new Error('数量必须大于0');
+      }
+
+      if (dayjs(end_date).isBefore(dayjs(start_date), 'day')) {
+        throw new Error('归还日期不能早于起租日期');
+      }
+
       const scheduleNo = `SCH-${dayjs().format('YYYYMMDD')}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
       const days = rental_days || dayjs(end_date).diff(dayjs(start_date), 'day') + 1;
-      const totalAmount = (daily_rate || 0) * days * quantity;
+      const validDays = days > 0 ? days : 1;
+      const totalAmount = Math.max(0, (daily_rate || 0) * validDays * qty);
 
       const info = db.insert('rental_schedules', {
         schedule_no: scheduleNo,
@@ -245,10 +285,10 @@ router.post('/batch-create', (req, res) => {
         costume_name: costume_name || '',
         batch_id: null,
         batch_no: null,
-        quantity: parseInt(quantity),
+        quantity: qty,
         start_date,
         end_date,
-        rental_days: parseInt(days),
+        rental_days: validDays,
         daily_rate: daily_rate || 0,
         total_amount: totalAmount,
         damage_deposit: damage_deposit || 0,

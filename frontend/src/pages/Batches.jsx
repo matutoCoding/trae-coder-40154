@@ -135,6 +135,13 @@ function Batches() {
       alert('请填写必填项');
       return;
     }
+    
+    const qty = parseInt(formData.quantity);
+    if (isNaN(qty) || qty <= 0) {
+      alert('数量必须大于0');
+      return;
+    }
+    
     try {
       if (editingItem) {
         await batchApi.update(editingItem.id, formData);

@@ -59,6 +59,7 @@ export const cycleRuleApi = {
 export const outboundApi = {
   list: (params) => api.get('/outbound', { params }),
   get: (id) => api.get(`/outbound/${id}`),
+  getBySchedule: (scheduleId) => api.get(`/outbound/by-schedule/${scheduleId}`),
   bySchedule: (scheduleId, data) => api.post(`/outbound/by-schedule/${scheduleId}`, data),
   direct: (data) => api.post('/outbound/direct', data),
   previewFifo: (costumeId, quantity) => api.post(`/outbound/preview-fifo/${costumeId}/${quantity}`)

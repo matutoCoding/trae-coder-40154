@@ -215,6 +215,18 @@ function Schedules() {
       alert('请填写必填项');
       return;
     }
+    
+    const qty = parseInt(formData.quantity);
+    if (isNaN(qty) || qty <= 0) {
+      alert('数量必须大于0');
+      return;
+    }
+    
+    if (dayjs(formData.end_date).isBefore(dayjs(formData.start_date), 'day')) {
+      alert('归还日期不能早于起租日期');
+      return;
+    }
+    
     try {
       if (editingItem) {
         await scheduleApi.update(editingItem.id, formData);
@@ -258,8 +270,8 @@ function Schedules() {
     const getSchedulesForDate = (date) => {
       const dateStr = date.format('YYYY-MM-DD');
       return schedules.filter(s => 
-        dayjs(s.start_date).isBefore(dateStr) || dayjs(s.start_date).isSame(dateStr, 'day') &&
-        dayjs(s.end_date).isAfter(dateStr) || dayjs(s.end_date).isSame(dateStr, 'day')
+        (dayjs(s.start_date).isSame(dateStr, 'day') || dayjs(s.start_date).isBefore(dateStr, 'day')) &&
+        (dayjs(s.end_date).isSame(dateStr, 'day') || dayjs(s.end_date).isAfter(dateStr, 'day'))
       );
     };
 

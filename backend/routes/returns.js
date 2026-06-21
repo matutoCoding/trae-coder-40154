@@ -66,6 +66,7 @@ router.post('/returns/by-schedule/:scheduleId', (req, res) => {
   const outboundItems = db.filter('outbound_items', { outbound_id: outbound.id });
 
   const returnNo = `RET-${dayjs().format('YYYYMMDD')}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+  const nowStr = dayjs().format('YYYY-MM-DD HH:mm:ss');
 
   db.transaction(() => {
     const info = db.insert('return_records', {
@@ -77,7 +78,8 @@ router.post('/returns/by-schedule/:scheduleId', (req, res) => {
       total_quantity: schedule.quantity,
       operator: operator || '系统',
       status: 'returned',
-      remark: remark || null
+      remark: remark || null,
+      return_date: nowStr
     });
 
     const returnId = info.lastInsertRowid;
@@ -86,13 +88,24 @@ router.post('/returns/by-schedule/:scheduleId', (req, res) => {
     const damagedItemMap = {};
     if (damaged_items && Array.isArray(damaged_items)) {
       damaged_items.forEach(item => {
-        damagedItemMap[item.batch_id] = item.damaged_quantity || 0;
+        damagedItemMap[item.batch_id] = {
+          damaged_quantity: parseInt(item.damaged_quantity) || 0,
+          good_quantity: parseInt(item.good_quantity) || 0
+        };
       });
     }
 
+    const costume = db.getById('costumes', schedule.costume_id);
+
     outboundItems.forEach(outItem => {
-      const damagedQty = damagedItemMap[outItem.batch_id] || 0;
-      const goodQty = outItem.quantity - damagedQty;
+      const batchInfo = damagedItemMap[outItem.batch_id] || { good_quantity: outItem.quantity, damaged_quantity: 0 };
+      const damagedQty = batchInfo.damaged_quantity || 0;
+      const goodQty = batchInfo.good_quantity !== undefined ? batchInfo.good_quantity : (outItem.quantity - damagedQty);
+      
+      if (goodQty + damagedQty !== outItem.quantity) {
+        throw new Error(`批次 ${outItem.batch_no} 的完好件数(${goodQty}) + 破损件数(${damagedQty}) 必须等于出库数量(${outItem.quantity})`);
+      }
+      
       totalDamaged += damagedQty;
 
       db.insert('return_items', {
@@ -112,30 +125,28 @@ router.post('/returns/by-schedule/:scheduleId', (req, res) => {
           });
         }
       }
+
+      if (damagedQty > 0) {
+        const damageNo = `DMG-${dayjs().format('YYYYMMDD')}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+        const compensationAmount = (costume?.damage_deposit || 100) * damagedQty;
+
+        db.insert('damage_records', {
+          damage_no: damageNo,
+          return_id: returnId,
+          schedule_id: parseInt(scheduleId),
+          costume_id: schedule.costume_id,
+          costume_name: schedule.costume_name,
+          batch_id: outItem.batch_id,
+          batch_no: outItem.batch_no,
+          damaged_quantity: damagedQty,
+          damage_level: 'minor',
+          compensation_amount: compensationAmount,
+          damage_description: remark || '归还时发现破损',
+          handler: operator || '系统',
+          status: 'pending'
+        });
+      }
     });
-
-    if (totalDamaged > 0) {
-      const damageNo = `DMG-${dayjs().format('YYYYMMDD')}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
-      
-      const costume = db.getById('costumes', schedule.costume_id);
-      const compensationAmount = (costume?.damage_deposit || 100) * totalDamaged;
-
-      db.insert('damage_records', {
-        damage_no: damageNo,
-        return_id: returnId,
-        schedule_id: parseInt(scheduleId),
-        costume_id: schedule.costume_id,
-        costume_name: schedule.costume_name,
-        batch_id: schedule.batch_id,
-        batch_no: schedule.batch_no,
-        damaged_quantity: totalDamaged,
-        damage_level: 'minor',
-        compensation_amount: compensationAmount,
-        damage_description: remark || '归还时发现破损',
-        handler: operator || '系统',
-        status: 'pending'
-      });
-    }
 
     db.update('rental_schedules', scheduleId, { status: 'returned' });
   });

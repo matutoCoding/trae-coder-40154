@@ -11,8 +11,8 @@
         "daily_rate": 180,
         "damage_deposit": 500,
         "total_quantity": 23,
-        "created_at": "2026-06-21 08:30:32",
-        "updated_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15",
+        "updated_at": "2026-06-21 08:48:15"
       },
       {
         "id": 2,
@@ -24,8 +24,8 @@
         "daily_rate": 120,
         "damage_deposit": 300,
         "total_quantity": 23,
-        "created_at": "2026-06-21 08:30:32",
-        "updated_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15",
+        "updated_at": "2026-06-21 08:48:15"
       },
       {
         "id": 3,
@@ -37,8 +37,8 @@
         "daily_rate": 150,
         "damage_deposit": 400,
         "total_quantity": 23,
-        "created_at": "2026-06-21 08:30:32",
-        "updated_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15",
+        "updated_at": "2026-06-21 08:48:15"
       },
       {
         "id": 4,
@@ -50,8 +50,8 @@
         "daily_rate": 200,
         "damage_deposit": 600,
         "total_quantity": 23,
-        "created_at": "2026-06-21 08:30:32",
-        "updated_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15",
+        "updated_at": "2026-06-21 08:48:15"
       },
       {
         "id": 5,
@@ -63,8 +63,8 @@
         "daily_rate": 160,
         "damage_deposit": 450,
         "total_quantity": 23,
-        "created_at": "2026-06-21 08:30:32",
-        "updated_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15",
+        "updated_at": "2026-06-21 08:48:15"
       }
     ],
     "costume_batches": [
@@ -77,10 +77,10 @@
         "expiry_date": "2026-12-18",
         "purchase_price": 800,
         "supplier": "锦绣服装制造厂",
-        "inbound_date": "2026-06-21 08:30:32",
+        "inbound_date": "2026-06-21 08:48:15",
         "status": "normal",
         "remark": null,
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       },
       {
         "id": 2,
@@ -91,24 +91,24 @@
         "expiry_date": "2027-06-21",
         "purchase_price": 850,
         "supplier": "锦绣服装制造厂",
-        "inbound_date": "2026-06-21 08:30:32",
+        "inbound_date": "2026-06-21 08:48:15",
         "status": "normal",
         "remark": null,
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       },
       {
         "id": 3,
         "costume_id": 1,
         "batch_no": "BATCH-0001-03",
         "quantity": 5,
-        "available_quantity": 5,
+        "available_quantity": 4,
         "expiry_date": "2026-06-24",
         "purchase_price": 750,
         "supplier": "华彩演出服有限公司",
-        "inbound_date": "2026-06-21 08:30:32",
+        "inbound_date": "2026-06-21 08:48:15",
         "status": "normal",
         "remark": null,
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       },
       {
         "id": 4,
@@ -119,10 +119,10 @@
         "expiry_date": "2026-12-18",
         "purchase_price": 800,
         "supplier": "锦绣服装制造厂",
-        "inbound_date": "2026-06-21 08:30:32",
+        "inbound_date": "2026-06-21 08:48:15",
         "status": "normal",
         "remark": null,
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       },
       {
         "id": 5,
@@ -133,10 +133,10 @@
         "expiry_date": "2027-06-21",
         "purchase_price": 850,
         "supplier": "锦绣服装制造厂",
-        "inbound_date": "2026-06-21 08:30:32",
+        "inbound_date": "2026-06-21 08:48:15",
         "status": "normal",
         "remark": null,
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       },
       {
         "id": 6,
@@ -147,10 +147,10 @@
         "expiry_date": "2026-06-24",
         "purchase_price": 750,
         "supplier": "华彩演出服有限公司",
-        "inbound_date": "2026-06-21 08:30:32",
+        "inbound_date": "2026-06-21 08:48:15",
         "status": "normal",
         "remark": null,
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       },
       {
         "id": 7,
@@ -161,10 +161,10 @@
         "expiry_date": "2026-12-18",
         "purchase_price": 800,
         "supplier": "锦绣服装制造厂",
-        "inbound_date": "2026-06-21 08:30:32",
+        "inbound_date": "2026-06-21 08:48:15",
         "status": "normal",
         "remark": null,
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       },
       {
         "id": 8,
@@ -175,10 +175,10 @@
         "expiry_date": "2027-06-21",
         "purchase_price": 850,
         "supplier": "锦绣服装制造厂",
-        "inbound_date": "2026-06-21 08:30:32",
+        "inbound_date": "2026-06-21 08:48:15",
         "status": "normal",
         "remark": null,
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       },
       {
         "id": 9,
@@ -189,10 +189,10 @@
         "expiry_date": "2026-06-24",
         "purchase_price": 750,
         "supplier": "华彩演出服有限公司",
-        "inbound_date": "2026-06-21 08:30:32",
+        "inbound_date": "2026-06-21 08:48:15",
         "status": "normal",
         "remark": null,
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       },
       {
         "id": 10,
@@ -203,10 +203,10 @@
         "expiry_date": "2026-12-18",
         "purchase_price": 800,
         "supplier": "锦绣服装制造厂",
-        "inbound_date": "2026-06-21 08:30:32",
+        "inbound_date": "2026-06-21 08:48:15",
         "status": "normal",
         "remark": null,
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       },
       {
         "id": 11,
@@ -217,10 +217,10 @@
         "expiry_date": "2027-06-21",
         "purchase_price": 850,
         "supplier": "锦绣服装制造厂",
-        "inbound_date": "2026-06-21 08:30:32",
+        "inbound_date": "2026-06-21 08:48:15",
         "status": "normal",
         "remark": null,
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       },
       {
         "id": 12,
@@ -231,10 +231,10 @@
         "expiry_date": "2026-06-24",
         "purchase_price": 750,
         "supplier": "华彩演出服有限公司",
-        "inbound_date": "2026-06-21 08:30:32",
+        "inbound_date": "2026-06-21 08:48:15",
         "status": "normal",
         "remark": null,
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       },
       {
         "id": 13,
@@ -245,10 +245,10 @@
         "expiry_date": "2026-12-18",
         "purchase_price": 800,
         "supplier": "锦绣服装制造厂",
-        "inbound_date": "2026-06-21 08:30:32",
+        "inbound_date": "2026-06-21 08:48:15",
         "status": "normal",
         "remark": null,
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       },
       {
         "id": 14,
@@ -259,10 +259,10 @@
         "expiry_date": "2027-06-21",
         "purchase_price": 850,
         "supplier": "锦绣服装制造厂",
-        "inbound_date": "2026-06-21 08:30:32",
+        "inbound_date": "2026-06-21 08:48:15",
         "status": "normal",
         "remark": null,
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       },
       {
         "id": 15,
@@ -273,10 +273,10 @@
         "expiry_date": "2026-06-24",
         "purchase_price": 750,
         "supplier": "华彩演出服有限公司",
-        "inbound_date": "2026-06-21 08:30:32",
+        "inbound_date": "2026-06-21 08:48:15",
         "status": "normal",
         "remark": null,
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       }
     ],
     "troupes": [
@@ -288,7 +288,7 @@
         "address": "北京市西城区京剧大院",
         "is_cooperative": 1,
         "remark": "长期合作伙伴，每周三演出",
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       },
       {
         "id": 2,
@@ -298,7 +298,7 @@
         "address": "上海市徐汇区舞蹈艺术中心",
         "is_cooperative": 1,
         "remark": "每月15号固定演出",
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       },
       {
         "id": 3,
@@ -308,27 +308,119 @@
         "address": "广州市天河区艺术大厦",
         "is_cooperative": 0,
         "remark": "散客合作",
-        "created_at": "2026-06-21 08:30:32"
+        "created_at": "2026-06-21 08:48:15"
       }
     ],
     "cycle_rules": [],
-    "rental_schedules": [],
-    "outbound_records": [],
-    "outbound_items": [],
-    "return_records": [],
-    "return_items": [],
-    "damage_records": []
+    "rental_schedules": [
+      {
+        "id": 1,
+        "schedule_no": "SCH-20260621-8909",
+        "troupe_id": 1,
+        "troupe_name": null,
+        "cycle_rule_id": null,
+        "costume_id": 1,
+        "costume_name": "京剧凤冠霞帔",
+        "batch_id": 3,
+        "batch_no": "BATCH-0001-03",
+        "quantity": 3,
+        "start_date": "2026-06-25",
+        "end_date": "2026-06-27",
+        "rental_days": 3,
+        "daily_rate": 0,
+        "total_amount": 0,
+        "damage_deposit": 0,
+        "status": "returned",
+        "contact_person": null,
+        "phone": null,
+        "remark": null,
+        "created_at": "2026-06-21 08:49:14"
+      }
+    ],
+    "outbound_records": [
+      {
+        "id": 1,
+        "outbound_no": "OUT-20260621-9404",
+        "schedule_id": 1,
+        "costume_id": 1,
+        "costume_name": "京剧凤冠霞帔",
+        "total_quantity": 3,
+        "operator": "测试员",
+        "status": "outbound",
+        "remark": null,
+        "outbound_date": "2026-06-21 08:49:38",
+        "created_at": "2026-06-21 08:49:38"
+      }
+    ],
+    "outbound_items": [
+      {
+        "id": 1,
+        "outbound_id": 1,
+        "batch_id": 3,
+        "batch_no": "BATCH-0001-03",
+        "quantity": 3,
+        "expiry_date": "2026-06-24",
+        "created_at": "2026-06-21 08:49:38"
+      }
+    ],
+    "return_records": [
+      {
+        "id": 1,
+        "return_no": "RET-20260621-6631",
+        "schedule_id": 1,
+        "outbound_id": 1,
+        "costume_id": 1,
+        "costume_name": "京剧凤冠霞帔",
+        "total_quantity": 3,
+        "operator": "测试员",
+        "status": "returned",
+        "remark": "测试归还",
+        "return_date": "2026-06-21 08:49:54",
+        "created_at": "2026-06-21 08:49:54"
+      }
+    ],
+    "return_items": [
+      {
+        "id": 1,
+        "return_id": 1,
+        "batch_id": 3,
+        "batch_no": "BATCH-0001-03",
+        "quantity": 3,
+        "good_quantity": 2,
+        "damaged_quantity": 1,
+        "created_at": "2026-06-21 08:49:54"
+      }
+    ],
+    "damage_records": [
+      {
+        "id": 1,
+        "damage_no": "DMG-20260621-4378",
+        "return_id": 1,
+        "schedule_id": 1,
+        "costume_id": 1,
+        "costume_name": "京剧凤冠霞帔",
+        "batch_id": 3,
+        "batch_no": "BATCH-0001-03",
+        "damaged_quantity": 1,
+        "damage_level": "minor",
+        "compensation_amount": 500,
+        "damage_description": "测试归还",
+        "handler": "测试员",
+        "status": "pending",
+        "created_at": "2026-06-21 08:49:54"
+      }
+    ]
   },
   "nextIds": {
     "costumes": 6,
     "costume_batches": 16,
     "troupes": 4,
     "cycle_rules": 1,
-    "rental_schedules": 1,
-    "outbound_records": 1,
-    "outbound_items": 1,
-    "return_records": 1,
-    "return_items": 1,
-    "damage_records": 1
+    "rental_schedules": 2,
+    "outbound_records": 2,
+    "outbound_items": 2,
+    "return_records": 2,
+    "return_items": 2,
+    "damage_records": 2
   }
 }
