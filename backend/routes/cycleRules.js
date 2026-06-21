@@ -178,11 +178,7 @@ router.post('/:id/preview', (req, res) => {
   
   const today = dayjs().format('YYYY-MM-DD');
   const previewItems = [];
-  const accumulatedReservations = {};
-
-  costumeList.forEach(costume => {
-    accumulatedReservations[costume.costume_id] = 0;
-  });
+  const approvedItems = [];
 
   dates.forEach((date) => {
     const startDate = dayjs(date);
@@ -205,12 +201,24 @@ router.post('/:id/preview', (req, res) => {
       });
 
       const alreadyReserved = overlappingSchedules.reduce((sum, s) => sum + s.quantity, 0);
-      const currentAccumulated = accumulatedReservations[costume.costume_id] || 0;
-      const netAvailable = Math.max(0, currentTotal - alreadyReserved - currentAccumulated);
+
+      const overlappingApproved = approvedItems.filter(item => 
+        item.costume_id == costume.costume_id &&
+        (item.start_date <= endDate.format('YYYY-MM-DD')) && 
+        (item.end_date >= startDate.format('YYYY-MM-DD'))
+      );
+      const accumulatedReservation = overlappingApproved.reduce((sum, s) => sum + s.quantity, 0);
+
+      const netAvailable = Math.max(0, currentTotal - alreadyReserved - accumulatedReservation);
       const quantityOk = costume.quantity <= netAvailable;
 
       if (quantityOk) {
-        accumulatedReservations[costume.costume_id] = currentAccumulated + costume.quantity;
+        approvedItems.push({
+          costume_id: costume.costume_id,
+          start_date: startDate.format('YYYY-MM-DD'),
+          end_date: endDate.format('YYYY-MM-DD'),
+          quantity: costume.quantity
+        });
       }
 
       previewItems.push({
@@ -224,7 +232,7 @@ router.post('/:id/preview', (req, res) => {
         damage_deposit: costume.damage_deposit || 0,
         total_available: currentTotal,
         already_reserved: alreadyReserved,
-        accumulated_reserved: currentAccumulated,
+        accumulated_reserved: accumulatedReservation,
         net_available: netAvailable,
         stock_ok: quantityOk,
         total_amount: costume.daily_rate * rule.rental_days * costume.quantity,

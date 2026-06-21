@@ -183,32 +183,6 @@ function Schedules() {
     }
   };
 
-  const handleCostumeChange = (costumeId) => {
-    const costume = costumes.find(c => c.id == costumeId);
-    if (costume) {
-      setFormData({
-        ...formData,
-        costume_id: costumeId,
-        costume_name: costume.name,
-        daily_rate: costume.daily_rate,
-        damage_deposit: costume.damage_deposit
-      });
-    }
-  };
-
-  const handleTroupeChange = (troupeId) => {
-    const troupe = troupes.find(t => t.id == troupeId);
-    if (troupe) {
-      setFormData({
-        ...formData,
-        troupe_id: troupeId,
-        troupe_name: troupe.name,
-        contact_person: troupe.contact_person || '',
-        phone: troupe.phone || ''
-      });
-    }
-  };
-
   const checkStock = async (data = formData, excludeId = editingItem?.id) => {
     if (!data.costume_id || !data.start_date || !data.end_date) {
       setStockCheck(null);

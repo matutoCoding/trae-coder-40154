@@ -94,8 +94,9 @@ function DamageRecords() {
 
   const handleOpenResolve = (item) => {
     setDetailItem(item);
+    const remaining = (item.remaining_amount !== undefined ? item.remaining_amount : (item.compensation_amount - (item.received_amount || 0)));
     setResolveData({
-      received_amount: item.compensation_amount,
+      received_amount: remaining > 0 ? remaining : item.compensation_amount,
       payment_method: '现金',
       handler: '',
       remark: ''
@@ -568,12 +569,15 @@ function DamageRecords() {
                 type="number"
                 step="0.01"
                 className="form-input"
-                min="0"
+                min="0.01"
+                max={(detailItem.remaining_amount !== undefined ? detailItem.remaining_amount : (detailItem.compensation_amount - (detailItem.received_amount || 0))) || detailItem.compensation_amount}
                 value={resolveData.received_amount}
                 onChange={e => setResolveData({ ...resolveData, received_amount: parseFloat(e.target.value) || 0 })}
               />
               <div style={{ fontSize: '12px', color: '#8c8c8c', marginTop: '4px' }}>
-                输入应收金额则一次性结清，输入部分金额则转为"部分处理"状态
+                剩余待收款：<strong style={{ color: '#fa8c16' }}>
+                  ¥{((detailItem.remaining_amount !== undefined ? detailItem.remaining_amount : (detailItem.compensation_amount - (detailItem.received_amount || 0))) || 0).toFixed(2)}
+                </strong>，输入应收金额则一次性结清，输入部分金额则转为"部分处理"状态
               </div>
             </div>
 

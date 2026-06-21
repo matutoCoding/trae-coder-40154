@@ -405,12 +405,17 @@
         "damage_level": "minor",
         "compensation_amount": 500,
         "damage_description": "领口轻微污渍，试穿时发现",
-        "handler": "管理员",
+        "handler": "B",
         "status": "pending",
         "created_at": "2026-06-21 08:49:54",
         "received_amount": 0,
         "remaining_amount": 500,
-        "payment_records": "[]"
+        "payment_records": "[]",
+        "resolved_time": null,
+        "waive_reason": null,
+        "waive_time": null,
+        "waive_handler": null,
+        "waived_amount": null
       }
     ]
   },

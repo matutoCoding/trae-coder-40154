@@ -11,7 +11,7 @@ function Modal({ title, onClose, children, footer, visible, size }) {
     <div className="modal-overlay" onClick={onClose}>
       <div 
         className={`modal ${sizeClass}`}
-        onClick={e => e.stopPropagation()
+        onClick={e => e.stopPropagation()}
       >
         <div className="modal-header">
           <div className="modal-title">{title}</div>

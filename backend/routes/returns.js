@@ -258,21 +258,20 @@ router.post('/damages/:id/resolve', (req, res) => {
   }
 
   const receivable = existing.compensation_amount;
+  const alreadyReceived = existing.received_amount || 0;
   const actualReceived = received_amount !== undefined ? parseFloat(received_amount) : receivable;
-  const now = dayjs().format('YYYY-MM-DD HH:mm:ss');
 
-  let newStatus = 'resolved';
-  let receivedRecord = {
-    received_amount: actualReceived,
-    payment_method: payment_method || '现金',
-    handler: handler || existing.handler || '管理员',
-    receive_time: now,
-    remark: remark || ''
-  };
-
-  if (actualReceived < receivable) {
-    newStatus = 'partial';
+  if (actualReceived <= 0 || isNaN(actualReceived)) {
+    return res.status(400).json({ error: '收款金额必须大于0' });
   }
+
+  if (alreadyReceived + actualReceived > receivable + 0.01) {
+    return res.status(400).json({ 
+      error: `收款超额！剩余待收仅 ¥${(receivable - alreadyReceived).toFixed(2)}，不能收取 ¥${actualReceived.toFixed(2)}` 
+    });
+  }
+
+  const now = dayjs().format('YYYY-MM-DD HH:mm:ss');
 
   let paymentRecords = [];
   try {
@@ -282,18 +281,25 @@ router.post('/damages/:id/resolve', (req, res) => {
   } catch (e) {
     paymentRecords = [];
   }
-  paymentRecords.push(receivedRecord);
+  paymentRecords.push({
+    received_amount: actualReceived,
+    payment_method: payment_method || '现金',
+    handler: handler || existing.handler || '管理员',
+    receive_time: now,
+    remark: remark || ''
+  });
 
   const totalReceived = paymentRecords.reduce((sum, r) => sum + (parseFloat(r.received_amount) || 0), 0);
-  let finalStatus = newStatus;
-  if (totalReceived >= receivable) {
+  const remaining = Math.max(0, receivable - totalReceived);
+  let finalStatus = 'partial';
+  if (remaining <= 0.01) {
     finalStatus = 'resolved';
   }
 
   db.update('damage_records', req.params.id, {
     status: finalStatus,
     received_amount: totalReceived,
-    remaining_amount: Math.max(0, receivable - totalReceived),
+    remaining_amount: remaining,
     resolved_time: finalStatus === 'resolved' ? now : existing.resolved_time,
     payment_records: JSON.stringify(paymentRecords),
     handler: handler || existing.handler || '管理员'
@@ -303,7 +309,7 @@ router.post('/damages/:id/resolve', (req, res) => {
     message: `收款成功，已收款 ¥${actualReceived.toFixed(2)}，状态：${finalStatus === 'resolved' ? '已处理完成' : '部分处理'}`,
     status: finalStatus,
     total_received: totalReceived,
-    remaining_amount: Math.max(0, receivable - totalReceived)
+    remaining_amount: remaining
   });
 });
 
@@ -358,7 +364,15 @@ router.post('/damages/:id/add-payment', (req, res) => {
   }
 
   const receivable = existing.compensation_amount;
+  const alreadyReceived = existing.received_amount || 0;
   const actualReceived = parseFloat(received_amount);
+
+  if (alreadyReceived + actualReceived > receivable + 0.01) {
+    return res.status(400).json({ 
+      error: `收款超额！剩余待收仅 ¥${(receivable - alreadyReceived).toFixed(2)}，不能收取 ¥${actualReceived.toFixed(2)}` 
+    });
+  }
+
   const now = dayjs().format('YYYY-MM-DD HH:mm:ss');
 
   let paymentRecords = [];
@@ -378,8 +392,9 @@ router.post('/damages/:id/add-payment', (req, res) => {
   });
 
   const totalReceived = paymentRecords.reduce((sum, r) => sum + (parseFloat(r.received_amount) || 0), 0);
+  const remaining = Math.max(0, receivable - totalReceived);
   let newStatus = existing.status;
-  if (totalReceived >= receivable) {
+  if (remaining <= 0.01) {
     newStatus = 'resolved';
   } else if (totalReceived > 0) {
     newStatus = 'partial';
@@ -388,7 +403,7 @@ router.post('/damages/:id/add-payment', (req, res) => {
   db.update('damage_records', req.params.id, {
     status: newStatus,
     received_amount: totalReceived,
-    remaining_amount: Math.max(0, receivable - totalReceived),
+    remaining_amount: remaining,
     resolved_time: newStatus === 'resolved' ? now : existing.resolved_time,
     payment_records: JSON.stringify(paymentRecords),
     handler: handler || existing.handler || '管理员'
