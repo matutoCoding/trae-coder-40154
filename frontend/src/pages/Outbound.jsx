@@ -12,6 +12,9 @@ function Outbound() {
   const [costumes, setCostumes] = useState([]);
   const [directModalVisible, setDirectModalVisible] = useState(false);
   const [fifoPreview, setFifoPreview] = useState(null);
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [detailItem, setDetailItem] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   
   const [directForm, setDirectForm] = useState({
     costume_id: '',
@@ -143,6 +146,19 @@ function Outbound() {
     }
   };
 
+  const handleViewDetail = async (record) => {
+    try {
+      setDetailLoading(true);
+      const res = await outboundApi.get(record.id);
+      setDetailItem(res.data);
+      setDetailVisible(true);
+    } catch (error) {
+      alert('加载详情失败');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
   const confirmedSchedules = schedules.filter(s => s.status === 'confirmed');
 
   return (
@@ -217,7 +233,7 @@ function Outbound() {
                       <td>{record.operator || '-'}</td>
                       <td><span className="tag tag-orange">已出库</span></td>
                       <td>
-                        <button className="btn btn-default btn-sm">详情</button>
+                        <button className="btn btn-default btn-sm" onClick={() => handleViewDetail(record)}>详情</button>
                       </td>
                     </tr>
                   ))}
@@ -369,6 +385,96 @@ function Outbound() {
             )}
           </div>
         )}
+      </Modal>
+
+      <Modal
+        title="出库详情"
+        visible={detailVisible}
+        onClose={() => setDetailVisible(false)}
+        size="large"
+        footer={
+          <button className="btn btn-default" onClick={() => setDetailVisible(false)}>关闭</button>
+        }
+      >
+        {detailLoading ? (
+          <div>加载中...</div>
+        ) : detailItem ? (
+          <>
+            <div className="detail-row">
+              <span className="detail-label">出库单号：</span>
+              <span className="detail-value">{detailItem.outbound_no}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">出库时间：</span>
+              <span className="detail-value">{dayjs(detailItem.outbound_date).format('YYYY-MM-DD HH:mm:ss')}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">操作员：</span>
+              <span className="detail-value">{detailItem.operator || '-'}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">服装：</span>
+              <span className="detail-value">{detailItem.costume_name}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">总数量：</span>
+              <span className="detail-value" style={{ fontWeight: 600, color: '#1890ff' }}>{detailItem.total_quantity} 件</span>
+            </div>
+
+            {detailItem.schedule && (
+              <div style={{
+                background: '#e6f7ff', padding: '12px 16px', borderRadius: '4px', margin: '12px 0'
+              }}>
+                <h4 style={{ marginBottom: '8px' }}>关联排期</h4>
+                <div style={{ fontSize: '13px', lineHeight: '2' }}>
+                  <div>排期号：<strong>{detailItem.schedule.schedule_no}</strong></div>
+                  <div>剧团/客户：{detailItem.schedule.troupe_name}</div>
+                  <div>租期：{detailItem.schedule.start_date} ~ {detailItem.schedule.end_date}</div>
+                  {detailItem.schedule.contact_person && (
+                    <div>联系人：{detailItem.schedule.contact_person} {detailItem.schedule.phone ? `(${detailItem.schedule.phone})` : ''}</div>
+                  )}
+                </div>
+                {detailItem.return_record && (
+                  <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #91d5ff' }}>
+                    ✅ 已归还：{detailItem.return_record.return_no}
+                    <span style={{ color: '#8c8c8c', marginLeft: '8px' }}>
+                      ({dayjs(detailItem.return_record.return_date).format('YYYY-MM-DD HH:mm')})
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <h4 style={{ margin: '16px 0 12px' }}>出库批次明细</h4>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>批次号</th>
+                  <th>出库数量</th>
+                  <th>效期</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detailItem.items?.map((item, idx) => (
+                  <tr key={idx}>
+                    <td>{item.batch_no}</td>
+                    <td>{item.quantity}</td>
+                    <td>{dayjs(item.expiry_date).format('YYYY-MM-DD')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {detailItem.remark && (
+              <div style={{ marginTop: '16px' }}>
+                <div className="detail-row">
+                  <span className="detail-label">备注：</span>
+                  <span className="detail-value">{detailItem.remark}</span>
+                </div>
+              </div>
+            )}
+          </>
+        ) : null}
       </Modal>
     </div>
   );

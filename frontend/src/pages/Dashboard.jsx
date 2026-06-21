@@ -191,17 +191,41 @@ function Dashboard() {
                   <th>服装名称</th>
                   <th>数量</th>
                   <th>赔偿金额</th>
+                  <th>状态</th>
+                  <th>进度</th>
                 </tr>
               </thead>
               <tbody>
-                {warnings.pending_damages.map(damage => (
-                  <tr key={damage.id}>
-                    <td>{damage.damage_no}</td>
-                    <td>{damage.costume_name}</td>
-                    <td>{damage.damaged_quantity}</td>
-                    <td>¥{damage.compensation_amount}</td>
-                  </tr>
-                ))}
+                {warnings.pending_damages.map(damage => {
+                  const received = damage.received_amount || 0;
+                  const total = damage.compensation_amount || 0;
+                  const percent = total > 0 ? Math.min(100, Math.round((received / total) * 100)) : 0;
+                  return (
+                    <tr key={damage.id}>
+                      <td>{damage.damage_no}</td>
+                      <td>{damage.costume_name}</td>
+                      <td>{damage.damaged_quantity}</td>
+                      <td>¥{damage.compensation_amount}</td>
+                      <td>
+                        <span className={`tag ${damage.status === 'partial' ? 'tag-blue' : 'tag-orange'}`}>
+                          {damage.status === 'partial' ? '部分处理' : '待处理'}
+                        </span>
+                      </td>
+                      <td style={{ minWidth: '120px' }}>
+                        <div style={{ fontSize: '11px', color: '#8c8c8c', marginBottom: '2px' }}>
+                          ¥{received.toFixed(2)} / ¥{total.toFixed(2)}
+                        </div>
+                        <div style={{ height: '5px', background: '#f0f0f0', borderRadius: '3px' }}>
+                          <div style={{
+                            height: '100%', width: `${percent}%`,
+                            background: damage.status === 'partial' ? '#1890ff' : '#faad14',
+                            borderRadius: '3px'
+                          }} />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           ) : (

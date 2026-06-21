@@ -39,7 +39,45 @@ router.get('/:id', (req, res) => {
   }
 
   const items = db.filter('outbound_items', { outbound_id: record.id });
-  res.json({ ...record, items });
+  const itemWithBatch = items.map(item => {
+    const batch = db.getById('costume_batches', item.batch_id);
+    return {
+      ...item,
+      expiry_date: batch?.expiry_date,
+      batch_status: batch?.status
+    };
+  });
+
+  let scheduleInfo = null;
+  if (record.schedule_id) {
+    const s = db.getById('rental_schedules', record.schedule_id);
+    if (s) {
+      scheduleInfo = {
+        id: s.id,
+        schedule_no: s.schedule_no,
+        troupe_name: s.troupe_name || '散客',
+        start_date: s.start_date,
+        end_date: s.end_date,
+        contact_person: s.contact_person,
+        phone: s.phone,
+        status: s.status
+      };
+    }
+  }
+
+  let returnInfo = null;
+  if (record.schedule_id) {
+    const ret = db.filter('return_records', { schedule_id: record.schedule_id })[0];
+    if (ret) {
+      returnInfo = {
+        id: ret.id,
+        return_no: ret.return_no,
+        return_date: ret.return_date
+      };
+    }
+  }
+
+  res.json({ ...record, items: itemWithBatch, schedule: scheduleInfo, return_record: returnInfo });
 });
 
 router.get('/by-schedule/:scheduleId', (req, res) => {

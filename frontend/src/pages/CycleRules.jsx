@@ -13,7 +13,10 @@ function CycleRules() {
   const [generateModalVisible, setGenerateModalVisible] = useState(false);
   const [generatingRule, setGeneratingRule] = useState(null);
   const [generateStart, setGenerateStart] = useState(dayjs().format('YYYY-MM-DD'));
-  const [generateEnd, setGenerateEnd] = useState(dayjs().add(3, 'month').format('YYYY-MM-DD'));
+  const [generateEnd, setGenerateEnd] = useState(dayjs().add(1, 'month').format('YYYY-MM-DD'));
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [previewStep, setPreviewStep] = useState(1);
   
   const [formData, setFormData] = useState({
     troupe_id: '',
@@ -116,22 +119,79 @@ function CycleRules() {
   const handleGenerate = (item) => {
     setGeneratingRule(item);
     setGenerateStart(dayjs().format('YYYY-MM-DD'));
-    setGenerateEnd(dayjs().add(3, 'month').format('YYYY-MM-DD'));
+    setGenerateEnd(dayjs().add(1, 'month').format('YYYY-MM-DD'));
+    setPreviewData(null);
+    setPreviewStep(1);
     setGenerateModalVisible(true);
   };
 
-  const doGenerate = async () => {
+  const doPreview = async () => {
     if (!generatingRule) return;
+    if (dayjs(generateEnd).isBefore(dayjs(generateStart))) {
+      alert('结束日期不能早于开始日期');
+      return;
+    }
     try {
-      const res = await cycleRuleApi.generate(generatingRule.id, {
+      setPreviewLoading(true);
+      const res = await cycleRuleApi.preview(generatingRule.id, {
         start_date: generateStart,
         end_date: generateEnd
+      });
+      setPreviewData(res.data);
+      setPreviewStep(2);
+    } catch (error) {
+      alert(error.response?.data?.error || '预览失败');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const togglePreviewItem = (key) => {
+    if (!previewData) return;
+    const newItems = previewData.preview_items.map(item => {
+      if (item.key === key) {
+        if (!item.stock_ok) return item;
+        return { ...item, selected: !item.selected };
+      }
+      return item;
+    });
+    setPreviewData({ ...previewData, preview_items: newItems });
+  };
+
+  const toggleAllStockOk = () => {
+    if (!previewData) return;
+    const hasUnselected = previewData.preview_items.some(i => i.stock_ok && !i.selected);
+    const newItems = previewData.preview_items.map(item => {
+      if (item.stock_ok) {
+        return { ...item, selected: hasUnselected };
+      }
+      return item;
+    });
+    setPreviewData({ ...previewData, preview_items: newItems });
+  };
+
+  const doGenerate = async () => {
+    if (!generatingRule || !previewData) return;
+    const selectedItems = previewData.preview_items.filter(i => i.selected && i.stock_ok);
+    if (selectedItems.length === 0) {
+      alert('请至少选择一条可生成的排期');
+      return;
+    }
+    if (!confirm(`确定生成 ${selectedItems.length} 条排期吗？`)) return;
+    try {
+      const res = await cycleRuleApi.generate(generatingRule.id, {
+        selected_items: selectedItems
       });
       alert(res.data.message);
       setGenerateModalVisible(false);
     } catch (error) {
       alert(error.response?.data?.error || '生成失败');
     }
+  };
+
+  const backToDateSelect = () => {
+    setPreviewStep(1);
+    setPreviewData(null);
   };
 
   const handleCostumeSelect = (costumeId) => {
@@ -468,44 +528,148 @@ function CycleRules() {
         title="批量生成排期"
         visible={generateModalVisible}
         onClose={() => setGenerateModalVisible(false)}
+        size="extraLarge"
         footer={
-          <>
-            <button className="btn btn-default" onClick={() => setGenerateModalVisible(false)}>取消</button>
-            <button className="btn btn-primary" onClick={doGenerate}>生成</button>
-          </>
+          previewStep === 1 ? (
+            <>
+              <button className="btn btn-default" onClick={() => setGenerateModalVisible(false)}>取消</button>
+              <button className="btn btn-primary" onClick={doPreview} disabled={previewLoading}>
+                {previewLoading ? '加载中...' : '下一步：预览库存'}
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="btn btn-default" onClick={backToDateSelect}>上一步</button>
+              <button className="btn btn-default" onClick={() => setGenerateModalVisible(false)}>取消</button>
+              <button className="btn btn-primary" onClick={doGenerate}>
+                确认生成 {previewData?.preview_items?.filter(i => i.selected && i.stock_ok).length || 0} 条
+              </button>
+            </>
+          )
         }
       >
-        {generatingRule && (
+        {generatingRule && previewStep === 1 && (
           <>
-            <div className="confirmation-text">
+            <div className="confirmation-text" style={{ background: '#e6f7ff', padding: '12px', borderRadius: '4px', marginBottom: '16px' }}>
               将为规则 <strong>{generatingRule.name}</strong> 生成排期
             </div>
-            <div className="form-item">
-              <label className="form-label">生成开始日期</label>
-              <input
-                type="date"
-                className="form-input"
-                value={generateStart}
-                onChange={e => setGenerateStart(e.target.value)}
-              />
-            </div>
-            <div className="form-item">
-              <label className="form-label">生成结束日期</label>
-              <input
-                type="date"
-                className="form-input"
-                value={generateEnd}
-                onChange={e => setGenerateEnd(e.target.value)}
-              />
+            <div className="form-row">
+              <div className="form-item">
+                <label className="form-label">生成开始日期 *</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={generateStart}
+                  onChange={e => setGenerateStart(e.target.value)}
+                />
+              </div>
+              <div className="form-item">
+                <label className="form-label">生成结束日期 *</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={generateEnd}
+                  onChange={e => setGenerateEnd(e.target.value)}
+                />
+              </div>
             </div>
             <div className="confirmation-text" style={{ background: '#f6ffed', padding: '12px', borderRadius: '4px' }}>
+              <strong>剧团：</strong>{generatingRule.troupe_name}<br />
               <strong>周期类型：</strong>{getCycleTypeText(generatingRule.cycle_type)}
               {generatingRule.cycle_type === 'weekly' && ` (周${['日', '一', '二', '三', '四', '五', '六'][generatingRule.day_of_week]})`}
               {generatingRule.cycle_type === 'monthly' && ` (每月${generatingRule.day_of_month}号)`}
               <br />
               <strong>包含服装：</strong>{generatingRule.costume_list_parsed?.length || 0} 套
-              <br />
-              <strong>每次租期：</strong>{generatingRule.rental_days} 天
+              <strong style={{ marginLeft: '20px' }}>每次租期：</strong>{generatingRule.rental_days} 天
+            </div>
+          </>
+        )}
+
+        {generatingRule && previewStep === 2 && previewData && (
+          <>
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px'
+            }}>
+              <div style={{ padding: '12px', background: '#e6f7ff', borderRadius: '4px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#1890ff' }}>{previewData.total_items}</div>
+                <div style={{ fontSize: '12px', color: '#8c8c8c' }}>总排期数</div>
+              </div>
+              <div style={{ padding: '12px', background: '#f6ffed', borderRadius: '4px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#52c41a' }}>{previewData.all_ok_count}</div>
+                <div style={{ fontSize: '12px', color: '#8c8c8c' }}>库存充足</div>
+              </div>
+              <div style={{ padding: '12px', background: '#fff7e6', borderRadius: '4px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#fa8c16' }}>{previewData.insufficient_count}</div>
+                <div style={{ fontSize: '12px', color: '#8c8c8c' }}>库存不足(跳过)</div>
+              </div>
+              <div style={{ padding: '12px', background: '#f9f0ff', borderRadius: '4px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#722ed1' }}>{previewData.preview_items.filter(i => i.selected && i.stock_ok).length}</div>
+                <div style={{ fontSize: '12px', color: '#8c8c8c' }}>已勾选将生成</div>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <button className="btn btn-default btn-sm" onClick={toggleAllStockOk}>
+                {previewData.preview_items.some(i => i.stock_ok && !i.selected) ? '全选库存充足项' : '取消全选'}
+              </button>
+            </div>
+
+            <div style={{ maxHeight: '450px', overflowY: 'auto', border: '1px solid #f0f0f0', borderRadius: '4px' }}>
+              <table className="table" style={{ margin: 0 }}>
+                <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+                  <tr>
+                    <th style={{ width: '40px' }}>
+                      <input type="checkbox" 
+                        checked={previewData.preview_items.every(i => !i.stock_ok || i.selected)}
+                        onChange={toggleAllStockOk}
+                        disabled={previewData.preview_items.every(i => !i.stock_ok)}
+                      />
+                    </th>
+                    <th>起租日期</th>
+                    <th>归还日期</th>
+                    <th>服装</th>
+                    <th>数量</th>
+                    <th>日租金</th>
+                    <th>总金额</th>
+                    <th>库存情况</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {previewData.preview_items.map(item => (
+                    <tr key={item.key} style={{ background: !item.stock_ok ? '#fff1f0' : 'white' }}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={item.selected && item.stock_ok}
+                          disabled={!item.stock_ok}
+                          onChange={() => togglePreviewItem(item.key)}
+                        />
+                      </td>
+                      <td>{item.start_date}</td>
+                      <td>{item.end_date}</td>
+                      <td>{item.costume_name}</td>
+                      <td>{item.quantity}</td>
+                      <td>¥{item.daily_rate}</td>
+                      <td style={{ color: '#ff4d4f', fontWeight: 600 }}>¥{item.total_amount}</td>
+                      <td>
+                        {item.stock_ok ? (
+                          <span className="tag tag-green">
+                            可用 (净余: {item.net_available}/{item.total_available})
+                          </span>
+                        ) : (
+                          <span className="tag tag-red">
+                            不足 (净余: {item.net_available}/{item.total_available}, 占用: {item.already_reserved + item.accumulated_reserved})
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ marginTop: '12px', fontSize: '13px', color: '#8c8c8c' }}>
+              💡 提示：<span style={{ color: '#fa8c16' }}>红色背景</span>的行表示库存不足，将无法勾选，生成时会自动跳过。您可以根据实际情况调整日期范围或服装数量。
             </div>
           </>
         )}

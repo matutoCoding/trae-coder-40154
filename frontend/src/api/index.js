@@ -23,7 +23,8 @@ export const batchApi = {
   warning: (days) => api.get('/batches/warning', { params: { days } }),
   lock: (id) => api.post(`/batches/${id}/lock`),
   unlock: (id) => api.post(`/batches/${id}/unlock`),
-  fifo: (costumeId, quantity) => api.get(`/batches/fifo/${costumeId}/${quantity}`)
+  fifo: (costumeId, quantity) => api.get(`/batches/fifo/${costumeId}/${quantity}`),
+  checkAvailability: (data) => api.post('/batches/check-availability', data)
 };
 
 export const troupeApi = {
@@ -53,6 +54,7 @@ export const cycleRuleApi = {
   create: (data) => api.post('/cycle-rules', data),
   update: (id, data) => api.put(`/cycle-rules/${id}`, data),
   delete: (id) => api.delete(`/cycle-rules/${id}`),
+  preview: (id, data) => api.post(`/cycle-rules/${id}/preview`, data),
   generate: (id, data) => api.post(`/cycle-rules/${id}/generate`, data)
 };
 
@@ -73,7 +75,10 @@ export const returnApi = {
   listDamages: (params) => api.get('/returns/damages', { params }),
   getDamage: (id) => api.get(`/returns/damages/${id}`),
   updateDamage: (id, data) => api.put(`/returns/damages/${id}`, data),
-  resolveDamage: (id, data) => api.post(`/returns/damages/${id}/resolve`, data)
+  resolveDamage: (id, data) => api.post(`/returns/damages/${id}/resolve`, data),
+  waiveDamage: (id, data) => api.post(`/returns/damages/${id}/waive`, data),
+  addPayment: (id, data) => api.post(`/returns/damages/${id}/add-payment`, data),
+  getDamagePayments: (id) => api.get(`/returns/damages/${id}/payments`)
 };
 
 export const dashboardApi = {

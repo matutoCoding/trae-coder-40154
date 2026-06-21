@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
+import { useNavigate } from 'react-router-dom';
 import { returnApi, scheduleApi, outboundApi } from '../api';
 import Modal from '../components/Modal';
 
 function Returns() {
+  const navigate = useNavigate();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState('');
@@ -17,6 +19,9 @@ function Returns() {
     remark: '',
     damaged_items: []
   });
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [detailItem, setDetailItem] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
     loadRecords();
@@ -43,6 +48,19 @@ function Returns() {
       setOutboundSchedules(res.data);
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const handleViewDetail = async (record) => {
+    try {
+      setDetailLoading(true);
+      const res = await returnApi.getReturn(record.id);
+      setDetailItem(res.data);
+      setDetailVisible(true);
+    } catch (error) {
+      alert('加载详情失败');
+    } finally {
+      setDetailLoading(false);
     }
   };
 
@@ -201,7 +219,7 @@ function Returns() {
                       <td>
                         <button 
                           className="btn btn-default btn-sm"
-                          onClick={() => viewDetail(record)}
+                          onClick={() => handleViewDetail(record)}
                         >
                           详情
                         </button>
@@ -355,6 +373,173 @@ function Returns() {
             </div>
           </>
         )}
+      </Modal>
+
+      <Modal
+        title="归还详情"
+        visible={detailVisible}
+        onClose={() => setDetailVisible(false)}
+        size="large"
+        footer={
+          <button className="btn btn-default" onClick={() => setDetailVisible(false)}>关闭</button>
+        }
+      >
+        {detailLoading ? (
+          <div>加载中...</div>
+        ) : detailItem ? (
+          <>
+            <div className="detail-row">
+              <span className="detail-label">归还单号：</span>
+              <span className="detail-value">{detailItem.return_no}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">归还时间：</span>
+              <span className="detail-value" style={{ color: '#1890ff', fontWeight: 600 }}>
+                {dayjs(detailItem.return_date).format('YYYY-MM-DD HH:mm:ss')}
+              </span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">操作员：</span>
+              <span className="detail-value">{detailItem.operator || '-'}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">服装：</span>
+              <span className="detail-value">{detailItem.costume_name}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">总数量：</span>
+              <span className="detail-value">{detailItem.total_quantity} 件</span>
+            </div>
+
+            {detailItem.schedule && (
+              <div style={{
+                background: '#e6f7ff', padding: '12px 16px', borderRadius: '4px', margin: '12px 0'
+              }}>
+                <h4 style={{ marginBottom: '8px' }}>关联排期</h4>
+                <div style={{ fontSize: '13px', lineHeight: '2' }}>
+                  <div>排期号：<strong>{detailItem.schedule.schedule_no}</strong></div>
+                  <div>剧团/客户：{detailItem.schedule.troupe_name}</div>
+                  <div>租期：{detailItem.schedule.start_date} ~ {detailItem.schedule.end_date}</div>
+                  {detailItem.schedule.contact_person && (
+                    <div>联系人：{detailItem.schedule.contact_person} {detailItem.schedule.phone ? `(${detailItem.schedule.phone})` : ''}</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {detailItem.outbound && (
+              <div style={{
+                background: '#fff7e6', padding: '12px 16px', borderRadius: '4px', margin: '12px 0'
+              }}>
+                <h4 style={{ marginBottom: '8px' }}>关联出库</h4>
+                <div style={{ fontSize: '13px', lineHeight: '2' }}>
+                  <div>出库单号：<strong>{detailItem.outbound.outbound_no}</strong></div>
+                  <div>出库时间：{dayjs(detailItem.outbound.outbound_date).format('YYYY-MM-DD HH:mm:ss')}</div>
+                  <div>出库操作员：{detailItem.outbound.operator || '-'}</div>
+                </div>
+              </div>
+            )}
+
+            <h4 style={{ margin: '16px 0 12px' }}>归还批次明细</h4>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>批次号</th>
+                  <th>效期</th>
+                  <th>出库数量</th>
+                  <th style={{ background: '#f6ffed' }}>完好件数</th>
+                  <th style={{ background: '#fff1f0' }}>破损件数</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detailItem.items?.map((item, idx) => (
+                  <tr key={idx}>
+                    <td>{item.batch_no}</td>
+                    <td>{dayjs(item.expiry_date).format('YYYY-MM-DD')}</td>
+                    <td>{item.quantity}</td>
+                    <td style={{ background: '#f6ffed', color: '#52c41a', fontWeight: 600 }}>
+                      {item.good_quantity || 0}
+                    </td>
+                    <td style={{ background: '#fff1f0', color: '#ff4d4f', fontWeight: 600 }}>
+                      {item.damaged_quantity || 0}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              {(() => {
+                const totalGood = detailItem.items?.reduce((s, i) => s + (i.good_quantity || 0), 0) || 0;
+                const totalDamaged = detailItem.items?.reduce((s, i) => s + (i.damaged_quantity || 0), 0) || 0;
+                const totalQty = detailItem.items?.reduce((s, i) => s + i.quantity, 0) || 0;
+                return (
+                  <tfoot>
+                    <tr style={{ background: '#fafafa', fontWeight: 600 }}>
+                      <td colSpan="2" style={{ textAlign: 'right' }}>合计</td>
+                      <td>{totalQty}</td>
+                      <td style={{ color: '#52c41a' }}>{totalGood}</td>
+                      <td style={{ color: '#ff4d4f' }}>{totalDamaged}</td>
+                    </tr>
+                  </tfoot>
+                );
+              })()}
+            </table>
+
+            {detailItem.damages?.length > 0 && (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', marginBottom: '12px' }}>
+                  <h4 style={{ margin: 0 }}>破损赔偿记录</h4>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => { setDetailVisible(false); navigate('/damages'); }}
+                  >
+                    跳转至破损赔偿模块
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>破损单号</th>
+                      <th>批次</th>
+                      <th>破损数量</th>
+                      <th>破损程度</th>
+                      <th>赔偿金额</th>
+                      <th>状态</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detailItem.damages.map(d => (
+                      <tr key={d.id}>
+                        <td>{d.damage_no}</td>
+                        <td>{d.batch_no || '-'}</td>
+                        <td>{d.damaged_quantity} 件</td>
+                        <td>
+                          {d.damage_level === 'minor' && <span className="tag tag-green">轻微</span>}
+                          {d.damage_level === 'moderate' && <span className="tag tag-orange">中等</span>}
+                          {d.damage_level === 'severe' && <span className="tag tag-red">严重</span>}
+                        </td>
+                        <td style={{ color: '#ff4d4f', fontWeight: 600 }}>¥{d.compensation_amount}</td>
+                        <td>
+                          {d.status === 'pending' && <span className="tag tag-orange">待处理</span>}
+                          {d.status === 'resolved' && <span className="tag tag-green">已处理</span>}
+                          {d.status === 'waived' && <span className="tag tag-gray">已豁免</span>}
+                          {d.status === 'partial' && <span className="tag tag-blue">部分处理</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+
+            {detailItem.remark && (
+              <div style={{ marginTop: '16px' }}>
+                <div className="detail-row">
+                  <span className="detail-label">备注：</span>
+                  <span className="detail-value">{detailItem.remark}</span>
+                </div>
+              </div>
+            )}
+          </>
+        ) : null}
       </Modal>
     </div>
   );

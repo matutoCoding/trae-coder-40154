@@ -236,5 +236,67 @@ router.get('/fifo/:costumeId/:quantity', (req, res) => {
   });
 });
 
+router.post('/check-availability', (req, res) => {
+  const { costume_id, quantity, start_date, end_date, exclude_schedule_id } = req.body;
+
+  if (!costume_id || !start_date || !end_date) {
+    return res.status(400).json({ error: '服装ID、起止日期不能为空' });
+  }
+
+  const qty = parseInt(quantity) || 0;
+
+  const today = dayjs().format('YYYY-MM-DD');
+  let totalAvailable = db.getAll('costume_batches')
+    .filter(b => 
+      b.costume_id == costume_id && 
+      b.status === 'normal' && 
+      b.available_quantity > 0 && 
+      b.expiry_date >= today
+    )
+    .reduce((sum, b) => sum + b.available_quantity, 0);
+
+  const overlappingSchedules = db.getAll('rental_schedules').filter(s => {
+    if (s.status === 'cancelled' || s.status === 'returned') return false;
+    if (exclude_schedule_id && s.id == exclude_schedule_id) return false;
+    if (s.costume_id != costume_id) return false;
+    
+    return (s.start_date <= end_date) && (s.end_date >= start_date);
+  });
+
+  const reservedQuantity = overlappingSchedules.reduce((sum, s) => sum + s.quantity, 0);
+  const netAvailable = Math.max(0, totalAvailable - reservedQuantity);
+
+  const conflictSchedules = overlappingSchedules.map(s => ({
+    id: s.id,
+    schedule_no: s.schedule_no,
+    troupe_name: s.troupe_name || '散客',
+    quantity: s.quantity,
+    start_date: s.start_date,
+    end_date: s.end_date,
+    status: s.status
+  }));
+
+  let result = {
+    costume_id,
+    total_available: totalAvailable,
+    reserved_quantity: reservedQuantity,
+    net_available: netAvailable,
+    requested_quantity: qty,
+    is_available: qty <= netAvailable,
+    conflict_schedules: conflictSchedules,
+    check_status: ''
+  };
+
+  if (qty > totalAvailable) {
+    result.check_status = 'total';
+  } else if (qty > netAvailable) {
+    result.check_status = 'conflict';
+  } else {
+    result.check_status = 'ok';
+  }
+
+  res.json(result);
+});
+
 module.exports = router;
 module.exports.getAvailableBatches = getAvailableBatches;

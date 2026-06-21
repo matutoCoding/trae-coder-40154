@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
-import { scheduleApi, costumeApi, troupeApi } from '../api';
+import { scheduleApi, costumeApi, troupeApi, batchApi } from '../api';
 import Modal from '../components/Modal';
 
 function Schedules() {
@@ -32,6 +32,8 @@ function Schedules() {
     phone: '',
     remark: ''
   });
+  const [stockCheck, setStockCheck] = useState(null);
+  const [stockChecking, setStockChecking] = useState(false);
 
   useEffect(() => {
     loadSchedules();
@@ -97,27 +99,31 @@ function Schedules() {
 
   const handleAdd = () => {
     setEditingItem(null);
-    setFormData({
+    setStockCheck(null);
+    const today = dayjs().format('YYYY-MM-DD');
+    const newForm = {
       troupe_id: '',
       troupe_name: '',
       costume_id: '',
       costume_name: '',
       quantity: 1,
-      start_date: dayjs().format('YYYY-MM-DD'),
-      end_date: dayjs().format('YYYY-MM-DD'),
+      start_date: today,
+      end_date: today,
       rental_days: 1,
       daily_rate: 0,
       damage_deposit: 0,
       contact_person: '',
       phone: '',
       remark: ''
-    });
+    };
+    setFormData(newForm);
     setModalVisible(true);
   };
 
   const handleEdit = (item) => {
     setEditingItem(item);
-    setFormData({
+    setStockCheck(null);
+    const newForm = {
       troupe_id: item.troupe_id || '',
       troupe_name: item.troupe_name || '',
       costume_id: item.costume_id,
@@ -131,8 +137,10 @@ function Schedules() {
       contact_person: item.contact_person || '',
       phone: item.phone || '',
       remark: item.remark || ''
-    });
+    };
+    setFormData(newForm);
     setModalVisible(true);
+    setTimeout(() => checkStock(newForm, item.id), 100);
   };
 
   const handleView = async (item) => {
@@ -201,13 +209,64 @@ function Schedules() {
     }
   };
 
-  const handleDateChange = (field, value) => {
+  const checkStock = async (data = formData, excludeId = editingItem?.id) => {
+    if (!data.costume_id || !data.start_date || !data.end_date) {
+      setStockCheck(null);
+      return;
+    }
+    try {
+      setStockChecking(true);
+      const res = await batchApi.checkAvailability({
+        costume_id: data.costume_id,
+        quantity: parseInt(data.quantity) || 0,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        exclude_schedule_id: excludeId
+      });
+      setStockCheck(res.data);
+    } catch (error) {
+      setStockCheck(null);
+    } finally {
+      setStockChecking(false);
+    }
+  };
+
+  const handleCostumeChange = (costumeId) => {
+    const costume = costumes.find(c => c.id == costumeId);
+    const newData = {
+      ...formData,
+      costume_id: costumeId,
+      costume_name: costume?.name || '',
+      daily_rate: costume?.daily_rate || 0,
+      damage_deposit: costume?.damage_deposit || 0
+    };
+    setFormData(newData);
+    checkStock(newData);
+  };
+
+  const handleTroupeChange = (troupeId) => {
+    const troupe = troupes.find(t => t.id == troupeId);
+    if (troupe) {
+      setFormData({
+        ...formData,
+        troupe_id: troupeId,
+        troupe_name: troupe.name,
+        contact_person: troupe.contact_person || '',
+        phone: troupe.phone || ''
+      });
+    }
+  };
+
+  const handleFormFieldChange = (field, value) => {
     const newData = { ...formData, [field]: value };
-    if (newData.start_date && newData.end_date) {
-      const days = dayjs(newData.end_date).diff(dayjs(newData.start_date), 'day') + 1;
-      newData.rental_days = days;
+    if (field === 'start_date' || field === 'end_date') {
+      if (newData.start_date && newData.end_date) {
+        const days = dayjs(newData.end_date).diff(dayjs(newData.start_date), 'day') + 1;
+        newData.rental_days = days > 0 ? days : 1;
+      }
     }
     setFormData(newData);
+    checkStock(newData);
   };
 
   const handleSubmit = async () => {
@@ -224,6 +283,31 @@ function Schedules() {
     
     if (dayjs(formData.end_date).isBefore(dayjs(formData.start_date), 'day')) {
       alert('归还日期不能早于起租日期');
+      return;
+    }
+    
+    let stockResult = stockCheck;
+    if (!stockResult) {
+      try {
+        const res = await batchApi.checkAvailability({
+          costume_id: formData.costume_id,
+          quantity: qty,
+          start_date: formData.start_date,
+          end_date: formData.end_date,
+          exclude_schedule_id: editingItem?.id
+        });
+        stockResult = res.data;
+      } catch (e) {}
+    }
+    
+    if (stockResult && !stockResult.is_available) {
+      let msg = '';
+      if (stockResult.check_status === 'total') {
+        msg = `库存不足！该服装可用库存仅 ${stockResult.total_available} 件，您需要 ${stockResult.requested_quantity} 件`;
+      } else if (stockResult.check_status === 'conflict') {
+        msg = `档期冲突！租期内可用库存仅 ${stockResult.net_available} 件（已被其他排期占用 ${stockResult.reserved_quantity} 件），您需要 ${stockResult.requested_quantity} 件`;
+      }
+      alert(msg);
       return;
     }
     
@@ -501,9 +585,10 @@ function Schedules() {
             <label className="form-label">数量 *</label>
             <input
               type="number"
+              min="1"
               className="form-input"
               value={formData.quantity}
-              onChange={e => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
+              onChange={e => handleFormFieldChange('quantity', parseInt(e.target.value) || 1)}
             />
           </div>
           <div className="form-item">
@@ -523,7 +608,7 @@ function Schedules() {
               type="date"
               className="form-input"
               value={formData.start_date}
-              onChange={e => handleDateChange('start_date', e.target.value)}
+              onChange={e => handleFormFieldChange('start_date', e.target.value)}
             />
           </div>
           <div className="form-item">
@@ -532,10 +617,54 @@ function Schedules() {
               type="date"
               className="form-input"
               value={formData.end_date}
-              onChange={e => handleDateChange('end_date', e.target.value)}
+              onChange={e => handleFormFieldChange('end_date', e.target.value)}
             />
           </div>
         </div>
+
+        {stockCheck && (
+          <div style={{
+            padding: '12px 16px',
+            borderRadius: '4px',
+            marginBottom: '16px',
+            border: `1px solid ${stockCheck.check_status === 'ok' ? '#b7eb8f' : stockCheck.check_status === 'conflict' ? '#ffd591' : '#ffa39e'}`,
+            background: stockCheck.check_status === 'ok' ? '#f6ffed' : stockCheck.check_status === 'conflict' ? '#fff7e6' : '#fff1f0'
+          }}>
+            <div style={{ fontWeight: '600', marginBottom: '8px' }}>
+              {stockCheck.check_status === 'ok' && '✅ 库存充足'}
+              {stockCheck.check_status === 'conflict' && '⚠️ 档期冲突'}
+              {stockCheck.check_status === 'total' && '❌ 库存不足'}
+            </div>
+            <div style={{ fontSize: '13px', lineHeight: '1.8' }}>
+              <div>总可用库存：<strong>{stockCheck.total_available}</strong> 件</div>
+              {stockCheck.reserved_quantity > 0 && (
+                <div>租期内已被排期占用：<strong>{stockCheck.reserved_quantity}</strong> 件</div>
+              )}
+              <div>净可用：<strong style={{ color: stockCheck.is_available ? '#52c41a' : '#ff4d4f' }}>{stockCheck.net_available}</strong> 件</div>
+              <div>本次需要：<strong>{stockCheck.requested_quantity}</strong> 件</div>
+            </div>
+            {stockCheck.conflict_schedules?.length > 0 && (
+              <div style={{ marginTop: '12px' }}>
+                <div style={{ fontSize: '13px', color: '#8c8c8c', marginBottom: '6px' }}>冲突排期：</div>
+                <div style={{ maxHeight: '120px', overflowY: 'auto' }}>
+                  {stockCheck.conflict_schedules.map(s => (
+                    <div key={s.id} style={{ fontSize: '12px', padding: '6px 8px', background: '#fff', border: '1px solid #eee', borderRadius: '3px', marginBottom: '4px' }}>
+                      <span>{s.schedule_no}</span>
+                      <span style={{ marginLeft: '8px', color: '#8c8c8c' }}>{s.troupe_name}</span>
+                      <span style={{ marginLeft: '8px' }}>{s.quantity}件</span>
+                      <span style={{ marginLeft: '8px', color: '#8c8c8c' }}>{s.start_date} ~ {s.end_date}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        {!stockCheck && stockChecking && (
+          <div style={{ padding: '8px 16px', fontSize: '13px', color: '#8c8c8c', marginBottom: '16px' }}>
+            🔄 正在检查库存...
+          </div>
+        )}
         <div className="form-row">
           <div className="form-item">
             <label className="form-label">租赁天数</label>

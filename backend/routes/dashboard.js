@@ -40,7 +40,7 @@ router.get('/stats', (req, res) => {
 
   const outboundSchedules = schedules.filter(s => s.status === 'outbound').length;
 
-  const pendingDamages = damages.filter(d => d.status === 'pending').length;
+  const pendingDamages = damages.filter(d => d.status === 'pending' || d.status === 'partial').length;
 
   const activeCycleRules = cycleRules.filter(r => r.status === 'active').length;
 
@@ -119,8 +119,14 @@ router.get('/warnings', (req, res) => {
     });
 
   const pendingDamages = db.getAll('damage_records')
-    .filter(d => d.status === 'pending')
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .filter(d => d.status === 'pending' || d.status === 'partial')
+    .sort((a, b) => {
+      const statusOrder = { pending: 0, partial: 1 };
+      if (statusOrder[a.status] !== statusOrder[b.status]) {
+        return statusOrder[a.status] - statusOrder[b.status];
+      }
+      return new Date(b.created_at) - new Date(a.created_at);
+    })
     .slice(0, 10)
     .map(d => {
       const costume = db.getById('costumes', d.costume_id);
